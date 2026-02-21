@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sunshine Leaderboards</title>
+  <style>
+    body { font-family: Arial; background:#111; color:white }
+    table { border-collapse: collapse; margin:20px }
+    td, th { border:1px solid #555; padding:6px }
+  </style>
+</head>
+<body>
+
+<h1>Super Mario Sunshine Leaderboards</h1>
+
+<h2>Any%</h2>
+<div id="any"></div>
+
+<h2>120 Shines</h2>
+<div id="full"></div>
+
+<script>
+async function load(categoryId, elementId){
+  let url = `https://www.speedrun.com/api/v1/leaderboards/v1pxjz68/category/${categoryId}?top=200&embed=players`;
+  let res = await fetch(url);
+  let json = await res.json();
+
+  let runs = json.data.runs;
+
+  let byCountry = {};
+
+  runs.forEach(r=>{
+    let name = r.run.players.data[0].names.international;
+    let country = r.run.players.data[0].location?.country?.code || "UNK";
+    let time = r.run.times.primary_t;
+
+    if(!byCountry[country]) byCountry[country]=[];
+    byCountry[country].push({name,time});
+  });
+
+  let html = "<table><tr><th>Country</th><th>Runner</th><th>Time</th></tr>";
+
+  Object.keys(byCountry).forEach(c=>{
+    byCountry[c]
+      .sort((a,b)=>a.time-b.time)
+      .slice(0,5)
+      .forEach(r=>{
+        html += `<tr><td>${c}</td><td>${r.name}</td><td>${r.time.toFixed(2)}</td></tr>`;
+      });
+  });
+
+  html += "</table>";
+  document.getElementById(elementId).innerHTML = html;
+}
+
+load("n2y3r8do","any");
+load("z2wo9gd0","full");
+</script>
+
+</body>
+</html>
