@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Super Mario Sunshine Any% Leaderboard by Country</title>
+  <style>
+    body { font-family: Arial; background: #111; color: #fff; }
+    h2 { margin-top: 40px; }
+    table { border-collapse: collapse; margin-bottom: 20px; }
+    td, th { padding: 6px 12px; border: 1px solid #444; }
+    th { background: #222; }
+  </style>
+</head>
+<body>
+
+<h1>Super Mario Sunshine Any% - Top 5 Per Country</h1>
+<div id="content">Loading...</div>
+
+<script>
+const gameId = "v1pxjz68";
+const categoryId = "n2y3r8do";
+
+async function fetchLeaderboard() {
+  const response = await fetch(
+    `https://www.speedrun.com/api/v1/leaderboards/${gameId}/category/${categoryId}?embed=players`
+  );
+  const data = await response.json();
+  return data.data.runs;
+}
+
+function formatTime(seconds) {
+  const date = new Date(seconds * 1000);
+  return date.toISOString().substr(11, 8);
+}
+
+function processData(runs) {
+  const countries = {};
+
+  runs.forEach(run => {
+    const player = run.run.players[0];
+    const country = player.location?.country?.code || "Unknown";
+    const name = player.names.international;
+    const time = run.run.times.primary_t;
+
+    if (!countries[country]) countries[country] = [];
+    countries[country].push({ name, time });
+  });
+
+  for (const country in countries) {
+    countries[country]
+      .sort((a, b) => a.time - b.time)
+      .splice(5);
+  }
+
+  return countries;
+}
+
+function render(countries) {
+  const container = document.getElementById("content");
+  container.innerHTML = "";
+
+  Object.keys(countries).sort().forEach(country => {
+    const header = document.createElement("h2");
+    header.textContent = country;
+    container.appendChild(header);
+
+    const table = document.createElement("table");
+    table.innerHTML = "<tr><th>Player</th><th>Time</th></tr>";
+
+    countries[country].forEach(player => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${player.name}</td>
+        <td>${formatTime(player.time)}</td>
+      `;
+      table.appendChild(row);
+    });
+
+    container.appendChild(table);
+  });
+}
+
+fetchLeaderboard()
+  .then(processData)
+  .then(render)
+  .catch(err => {
+    document.getElementById("content").textContent = "Error loading data.";
+    console.error(err);
+  });
+</script>
+
+</body>
+</html>
